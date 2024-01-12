@@ -1,37 +1,51 @@
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.streaming.StreamingQuery;
-import org.apache.spark.sql.streaming.StreamingQueryException;
 
+import org.apache.spark.sql.streaming.StreamingQueryException;
 import java.util.concurrent.TimeoutException;
+
+import java.util.Arrays;
 
 public class StructuredStreamingApp {
 
     public static void main(String[] args) throws StreamingQueryException, TimeoutException {
+
         // Initialize SparkSession
-        SparkSession spark = SparkSession.builder()
-                .appName("StructuredStreamingApp")
-                .master("local[2]") // Use local mode with 2 cores, adjust as needed
+        SparkSession spark = SparkSession
+                .builder()
+                .appName("JavaStructuredNetworkWordCount")
+                //.master("local[2]") // Use local mode with 2 cores, adjust as needed
                 .getOrCreate();
 
-        // Define your structured streaming logic
-        Dataset<Row> inputData = spark.readStream()
+        // Create DataFrame representing the stream of input lines from connection to localhost:9999
+        Dataset<Row> lines = spark
+                .readStream()
                 .format("socket")
                 .option("host", "localhost")
                 .option("port", 9999)
                 .load();
 
-        Dataset<Row> result = inputData.selectExpr("value as input")
-                .groupBy("input")
-                .count();
+        // Split the lines into words
+        Dataset<String> words = lines
+                .as(Encoders.STRING())
+                .flatMap((FlatMapFunction<String, String>) x -> Arrays.asList(x.split(" ")).iterator(), Encoders.STRING());
 
-        // Start the streaming query
-        StreamingQuery query = result.writeStream()
+        // Generate running word count
+        Dataset<Row> wordCounts = words.groupBy("value").count();
+
+//        Dataset<Row> result = inputData.selectExpr("value as input")
+//                .groupBy("input")
+//                .count();
+
+
+        // Start running the query that prints the running counts to the console
+        StreamingQuery query = wordCounts.writeStream()
                 .outputMode("complete")
                 .format("console")
                 .start();
 
         query.awaitTermination();
+
     }
 }
