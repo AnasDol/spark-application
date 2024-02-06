@@ -9,7 +9,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="`spark-submit` works with `mvn clean package`">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="reads from kafka">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" afterDir="false" />
@@ -76,7 +76,7 @@
       <workItem from="1705045668168" duration="1731000" />
       <workItem from="1705050125384" duration="3846000" />
       <workItem from="1705293566764" duration="1451000" />
-      <workItem from="1706251769832" duration="5634000" />
+      <workItem from="1706251769832" duration="22123000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -99,7 +99,14 @@
       <option name="project" value="LOCAL" />
       <updated>1706256151529</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="reads from kafka">
+      <created>1706340960924</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1706340960924</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -120,6 +127,7 @@
     <MESSAGE value="initial commit" />
     <MESSAGE value="from docs" />
     <MESSAGE value="`spark-submit` works with `mvn clean package`" />
-    <option name="LAST_COMMIT_MESSAGE" value="`spark-submit` works with `mvn clean package`" />
+    <MESSAGE value="reads from kafka" />
+    <option name="LAST_COMMIT_MESSAGE" value="reads from kafka" />
   </component>
 </project>
