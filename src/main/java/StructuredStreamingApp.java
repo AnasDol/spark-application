@@ -1,3 +1,4 @@
+import org.apache.spark.SparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -5,6 +6,7 @@ import org.apache.spark.sql.functions;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 
+import java.util.Properties;
 import java.util.concurrent.TimeoutException;
 
 import static org.apache.spark.sql.functions.*;
@@ -132,7 +134,6 @@ public class StructuredStreamingApp {
                 .load();
 
         Dataset<Row> joined1 = withStartAndProbe
-//                .where(col("imsi").isNull())
                 .join(
                         db_table1,
                         withStartAndProbe.col("ms_ip_address").equalTo(db_table1.col("ms_ip_address")),
@@ -144,18 +145,6 @@ public class StructuredStreamingApp {
                 )
                 .drop(col("imsi"))
                 .withColumnRenamed("db_table1_imsi", "imsi");
-
-//        Dataset<Row> joined1 = withStartAndProbe
-//                .join(
-//                        db_table1,
-//                        withStartAndProbe.col("ms_ip_address").equalTo(db_table1.col("ms_ip_address")),
-//                        "left_outer"
-//                )
-//                .select(
-//                        withStartAndProbe.col("*"),
-//                        when(withStartAndProbe.col("imsi").isNull(), db_table1.col("imsi").alias("imsi"))
-//                                .otherwise(withStartAndProbe.col("imsi")).alias("imsi")
-//                );
 
         Dataset<Row> joined2 = joined1
                 .join(
@@ -176,8 +165,36 @@ public class StructuredStreamingApp {
                 .format("console")
                 .start();
 
+        StreamingQuery query2 = joined2
+                .drop(col("start_date"))
+                .drop(col("probe"))
+                .writeStream()
+                .outputMode("append")
+                .format("avro")
+                .option("path", "./results")
+                .option("checkpointLocation", "./path_to_checkpoint_location")
+                .option("maxRecordsPerFile", 5)
+                .option("fileNamePrefix", "jopa_")
+                .option("avroSchema", "{\n" +
+                        "  \"type\": \"record\",\n" +
+                        "  \"name\": \"MyAvroRecord\",\n" +
+                        "  \"fields\": [\n" +
+                        "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
+                        "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
+                        "    {\"name\": \"procedure_duration\", \"type\": [\"null\", \"long\"]},\n" +
+                        "    {\"name\": \"subscriber_activity\", \"type\": [\"null\", \"string\"]},\n" +
+                        "    {\"name\": \"procedure_type\", \"type\": [\"null\", \"long\"]},\n" +
+                        "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
+                        "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
+                        "    {\"name\": \"apn\", \"type\": [\"null\", \"string\"]},\n" +
+                        "    {\"name\": \"uri\", \"type\": [\"null\", \"string\"]},\n" +
+                        "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
+                        "  ]\n" +
+                        "}")
+                .start();
+
         try {
-            query.awaitTermination();
+            query2.awaitTermination();
         } catch (StreamingQueryException e) {
             e.printStackTrace();
         }
