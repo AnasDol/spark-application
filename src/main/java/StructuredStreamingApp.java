@@ -5,6 +5,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
+import org.apache.spark.storage.StorageLevel;
 
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
@@ -13,7 +14,7 @@ import static org.apache.spark.sql.functions.*;
 
 public class StructuredStreamingApp {
 
-    public static void main(String[] args) throws StreamingQueryException, TimeoutException {
+    public static void main(String[] args) throws TimeoutException {
 
         SparkSession spark = SparkSession
                 .builder()
@@ -33,17 +34,24 @@ public class StructuredStreamingApp {
 
         Dataset<Row> splitted2 = splitted
                 .select(
-                        col("csv_values").getItem(0).cast("string").as("measuring_probe_name"),
-                        col("csv_values").getItem(1).cast("long").as("start_time"),
-                        col("csv_values").getItem(2).cast("long").as("procedure_duration"),
-                        col("csv_values").getItem(3).cast("string").as("subscriber_activity"),
-                        col("csv_values").getItem(4).cast("long").as("procedure_type"),
-                        col("csv_values").getItem(5).cast("long").as("imsi"),
-                        col("csv_values").getItem(6).cast("long").as("msisdn"),
-                        col("csv_values").getItem(7).cast("string").as("apn"),
-                        col("csv_values").getItem(8).cast("string").as("uri"),
-                        col("csv_values").getItem(9).cast("string").as("ms_ip_address")
-//                        ,
+                        col("csv_values").getItem(0).cast("timestamp").as("start_time"),
+                        col("csv_values").getItem(1).cast("string").as("measuring_probe_name"),
+                        col("csv_values").getItem(2).cast("long").as("imsi"),
+                        col("csv_values").getItem(3).cast("long").as("msisdn"),
+//                        col("csv_values").getItem(4).cast("string").as("ms_ip_address"),
+                        functions.trim(functions.regexp_replace(
+                                trim(col("csv_values").getItem(4)), "^;+|;+$", ""))
+                                .as("ms_ip_address")
+//                        col("csv_values").getItem(0).cast("string").as("measuring_probe_name"),
+//                        col("csv_values").getItem(1).cast("long").as("start_time"),
+//                        col("csv_values").getItem(2).cast("long").as("procedure_duration"),
+//                        col("csv_values").getItem(3).cast("string").as("subscriber_activity"),
+//                        col("csv_values").getItem(4).cast("long").as("procedure_type"),
+//                        col("csv_values").getItem(5).cast("long").as("imsi"),
+//                        col("csv_values").getItem(6).cast("long").as("msisdn"),
+//                        col("csv_values").getItem(7).cast("string").as("apn"),
+//                        col("csv_values").getItem(8).cast("string").as("uri"),
+//                        col("csv_values").getItem(9).cast("string").as("ms_ip_address"),
 //                        col("csv_values").getItem(10).cast("long").as("total_data_ul"),
 //                        col("csv_values").getItem(11).cast("long").as("total_data_dl"),
 //                        col("csv_values").getItem(12).cast("long").as("mcc"),
@@ -111,83 +119,91 @@ public class StructuredStreamingApp {
 //                        col("csv_values").getItem(74).cast("string").as("filter")
                 );
 
+
         Dataset<Row> withStartAndProbe = splitted2
-                .withColumn("start_date", functions.to_date(functions.from_unixtime(col("start_time").divide(1000))))
+                .withColumn("start_date", functions.to_date(col("start_time"))) // event_date
                 .withColumn("probe", functions.substring(col("measuring_probe_name"), 1, 2));
 
-        Dataset<Row> db_table1 = spark
+        Dataset<Row> db_ms_ip = spark
                 .read()
                 .format("jdbc")
                 .option("url", "jdbc:postgresql://host.docker.internal:5432/diploma")
-                .option("dbtable", "public.db_table1")
+                .option("dbtable", "public.ms_ip")
                 .option("user", "postgres")
                 .option("password", "7844")
                 .load();
 
-        Dataset<Row> db_table2 = spark
+        db_ms_ip.persist(StorageLevel.MEMORY_AND_DISK());
+
+        Dataset<Row> db_imsi_msisdn = spark
                 .read()
                 .format("jdbc")
                 .option("url", "jdbc:postgresql://host.docker.internal:5432/diploma")
-                .option("dbtable", "public.db_table2")
+                .option("dbtable", "public.imsi_msisdn")
                 .option("user", "postgres")
                 .option("password", "7844")
                 .load();
+
+        db_imsi_msisdn.persist(StorageLevel.MEMORY_AND_DISK());
+
+        Dataset<Row> explodedTable = db_ms_ip
+                .withColumn("ms_ip_address", functions.explode(functions.split(trim(col("ms_ip_address")), ";")))
+                .withColumn("ms_ip_address", trim(col("ms_ip_address")))
+                .filter(col("ms_ip_address").notEqual(""));
+
+        explodedTable.show();
 
         Dataset<Row> joined1 = withStartAndProbe
                 .join(
-                        db_table1,
-                        withStartAndProbe.col("ms_ip_address").equalTo(db_table1.col("ms_ip_address")),
+                        explodedTable,
+                        withStartAndProbe.col("ms_ip_address").equalTo(explodedTable.col("ms_ip_address")),
                         "left_outer"
                 )
                 .select(
                         withStartAndProbe.col("*"),
-                        db_table1.col("imsi").alias("db_table1_imsi")
+                        explodedTable.col("imsi").alias("db_table1_imsi")
                 )
                 .drop(col("imsi"))
                 .withColumnRenamed("db_table1_imsi", "imsi");
 
         Dataset<Row> joined2 = joined1
                 .join(
-                        db_table2,
-                        joined1.col("imsi").equalTo(db_table2.col("imsi")),
+                        db_imsi_msisdn,
+                        joined1.col("imsi").equalTo(db_imsi_msisdn.col("imsi")),
                         "left_outer"
                 )
                 .select(
                         joined1.col("*"),
-                        db_table2.col("msisdn").alias("db_table2_msisdn")
+                        db_imsi_msisdn.col("msisdn").alias("db_table2_msisdn")
                 )
                 .drop(col("msisdn"))
                 .withColumnRenamed("db_table2_msisdn", "msisdn");
 
-        StreamingQuery query = joined2
-                .writeStream()
-                .outputMode("append")
-                .format("console")
-                .start();
+//        StreamingQuery query = joined1
+//                .writeStream()
+//                .outputMode("append")
+//                .format("console")
+//                .start();
 
         StreamingQuery query2 = joined2
-                .drop(col("start_date"))
-                .drop(col("probe"))
                 .writeStream()
                 .outputMode("append")
                 .format("avro")
+                .partitionBy("start_date", "probe")
                 .option("path", "./results")
                 .option("checkpointLocation", "./path_to_checkpoint_location")
                 .option("maxRecordsPerFile", 5)
-                .option("fileNamePrefix", "jopa_")
+                .option("fileNamePrefix", "someprefix_")
+//                  .option("spark.sql.avro.compression.codec", "uncompressed") // ??
+                .option("compression", "uncompressed")
                 .option("avroSchema", "{\n" +
                         "  \"type\": \"record\",\n" +
                         "  \"name\": \"MyAvroRecord\",\n" +
                         "  \"fields\": [\n" +
                         "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
                         "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
-                        "    {\"name\": \"procedure_duration\", \"type\": [\"null\", \"long\"]},\n" +
-                        "    {\"name\": \"subscriber_activity\", \"type\": [\"null\", \"string\"]},\n" +
-                        "    {\"name\": \"procedure_type\", \"type\": [\"null\", \"long\"]},\n" +
                         "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
                         "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
-                        "    {\"name\": \"apn\", \"type\": [\"null\", \"string\"]},\n" +
-                        "    {\"name\": \"uri\", \"type\": [\"null\", \"string\"]},\n" +
                         "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
                         "  ]\n" +
                         "}")
