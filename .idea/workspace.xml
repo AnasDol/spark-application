@@ -9,7 +9,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="avro + local store, but works fine (with partition)">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="works (hopefully) with right algorithm, but only one way: imsi is null">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" afterDir="false" />
     </list>
@@ -90,7 +90,14 @@
       <workItem from="1705293566764" duration="1451000" />
       <workItem from="1706251769832" duration="22123000" />
       <workItem from="1707550039945" duration="32216000" />
-      <workItem from="1707969602533" duration="845000" />
+      <workItem from="1707969602533" duration="16841000" />
+      <workItem from="1709014939101" duration="3730000" />
+      <workItem from="1709054530520" duration="857000" />
+      <workItem from="1709359884856" duration="1746000" />
+      <workItem from="1709390883099" duration="1213000" />
+      <workItem from="1709547853888" duration="1856000" />
+      <workItem from="1709813665900" duration="15933000" />
+      <workItem from="1709902042958" duration="3319000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -134,7 +141,21 @@
       <option name="project" value="LOCAL" />
       <updated>1707634786046</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="avro + local store, but works fine (with partition)">
+      <created>1707971553159</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1707971553159</updated>
+    </task>
+    <task id="LOCAL-00008" summary="works (hopefully) with right algorithm, but only one way: imsi is null">
+      <created>1709825632484</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1709825632484</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -159,6 +180,7 @@
     <MESSAGE value="enrichment directly from postgresql" />
     <MESSAGE value="avro + local store, but works strange" />
     <MESSAGE value="avro + local store, but works fine (with partition)" />
-    <option name="LAST_COMMIT_MESSAGE" value="avro + local store, but works fine (with partition)" />
+    <MESSAGE value="works (hopefully) with right algorithm, but only one way: imsi is null" />
+    <option name="LAST_COMMIT_MESSAGE" value="works (hopefully) with right algorithm, but only one way: imsi is null" />
   </component>
 </project>

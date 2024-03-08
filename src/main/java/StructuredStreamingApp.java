@@ -30,9 +30,7 @@ public class StructuredStreamingApp {
 
         Dataset<Row> splitted = inputDF
                 .select(col("value").cast("string"))
-                .select(split(col("value"), ",").alias("csv_values"));
-
-        Dataset<Row> splitted2 = splitted
+                .select(split(col("value"), ",").alias("csv_values"))
                 .select(
                         col("csv_values").getItem(0).cast("timestamp").as("start_time"),
                         col("csv_values").getItem(1).cast("string").as("measuring_probe_name"),
@@ -120,7 +118,7 @@ public class StructuredStreamingApp {
                 );
 
 
-        Dataset<Row> withStartAndProbe = splitted2
+        Dataset<Row> withStartAndProbe = splitted
                 .withColumn("event_date", functions.to_date(col("start_time")))
                 .withColumn("probe", functions.substring(col("measuring_probe_name"), 1, 2));
 
@@ -130,37 +128,53 @@ public class StructuredStreamingApp {
                 .filter(col("ip").notEqual(""));
 
 
-        Dataset<Row> db_ms_ip = spark
-                .read()
-                .format("jdbc")
-                .option("url", "jdbc:postgresql://host.docker.internal:5432/diploma")
-                .option("dbtable", "public.ms_ip")
-                .option("user", "postgres")
-                .option("password", "7844")
-                .load();
-
-        db_ms_ip.persist(StorageLevel.MEMORY_AND_DISK());
-
-        Dataset<Row> db_imsi_msisdn = spark
+        Dataset<Row> imsi_msisdn = spark
                 .read()
                 .format("jdbc")
                 .option("url", "jdbc:postgresql://host.docker.internal:5432/diploma")
                 .option("dbtable", "public.imsi_msisdn")
                 .option("user", "postgres")
                 .option("password", "7844")
-                .load();
+                .load()
+                .withColumnRenamed("imsi", "_imsi")
+                .withColumnRenamed("msisdn", "_msisdn");
 
-        db_imsi_msisdn.persist(StorageLevel.MEMORY_AND_DISK());
+        imsi_msisdn.persist(StorageLevel.MEMORY_AND_DISK());
 
-        Dataset<Row> exploded_ms_ip = db_ms_ip
-                .withColumnRenamed("start_time", "_start_time")
+        Dataset<Row> ms_ip = spark
+                .read()
+                .format("jdbc")
+                .option("url", "jdbc:postgresql://host.docker.internal:5432/diploma")
+                .option("dbtable", "public.ms_ip")
+                .option("user", "postgres")
+                .option("password", "7844")
+                .load()
+//                .withColumnRenamed("probe", "_probe")
+                .withColumnRenamed("imsi", "_imsi")
+                .withColumnRenamed("msisdn", "_msisdn")
+                .withColumnRenamed("start_time", "_start_time");
+
+        Dataset<Row> exploded_ms_ip = ms_ip
                 .withColumn("_ip", functions.explode(functions.split(trim(col("ms_ip_address")), ";")))
                 .withColumn("_ip", trim(col("_ip")))
                 .filter(col("_ip").notEqual(""));
 
+        exploded_ms_ip.persist(StorageLevel.MEMORY_AND_DISK());
+
         exploded_ms_ip.show();
 
-        Dataset<Row> joined1 = exploded_input
+
+        Dataset<Row> joined_imsi_msisdn = exploded_input
+                .filter(col("imsi").isNotNull().and(not(col("imsi").like("999%"))))
+                .join(
+                        imsi_msisdn,
+                        exploded_input.col("imsi").equalTo(imsi_msisdn.col("_imsi")),
+                        "left_outer"
+                )
+                .withColumn("msisdn", coalesce(col("_msisdn"), col("msisdn")));
+
+
+        Dataset<Row> joined_msip = exploded_input
                 .filter(col("imsi").isNull().or(col("imsi").like("999%")))
                 .join(
                         exploded_ms_ip,
@@ -174,14 +188,18 @@ public class StructuredStreamingApp {
                 )
                 .select(
                         exploded_input.col("*"),
-                        exploded_ms_ip.col("imsi").alias("_imsi"),
+                        exploded_ms_ip.col("_imsi"),
+                        exploded_ms_ip.col("_msisdn"),
                         exploded_ms_ip.col("_start_time")
-                );
+                )
+                .withColumn("msisdn", coalesce(col("_msisdn"), col("msisdn")))
+                .withColumn("imsi", coalesce(col("_imsi"), col("imsi")));
+//                .drop("imsi", "msisdn")
+//                .withColumnRenamed("_imsi", "imsi")
+//                .withColumnRenamed("_msisdn", "msisdn");
 
 
-
-
-        StreamingQuery query = joined1
+        StreamingQuery query1 = joined_msip
                 .writeStream()
                 .foreachBatch(
                         (VoidFunction2<Dataset<Row>, Long>) (dataset, batchId) -> {
@@ -189,14 +207,40 @@ public class StructuredStreamingApp {
 
                                 Dataset<Row> filtered = dataset.sort(col("_start_time").desc()).limit(1);
                                 filtered.show();
+
 //                                filtered
 //                                        .write()
-//                                        .format("console")
+//                                        .format("avro")
+//                                        .partitionBy("event_date", "probe")
+//                                        .option("path", "./results")
+//                                        .option("checkpointLocation", "./path_to_checkpoint_location")
+//                                        .option("compression", "uncompressed")
+//                                        .option("avroSchema", "{\n" +
+//                                                "  \"type\": \"record\",\n" +
+//                                                "  \"name\": \"MyAvroRecord\",\n" +
+//                                                "  \"fields\": [\n" +
+//                                                "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
+//                                                "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
+//                                                "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
+//                                                "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
+//                                                "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
+//                                                "  ]\n" +
+//                                                "}")
 //                                        .start();
+
+
+
+
                             }
                         }
                 )
                 .outputMode("append")
+                .start();
+
+        StreamingQuery query2 = joined_imsi_msisdn // здесь ведь не требуется выбирать один?
+                .writeStream()
+                .outputMode("append")
+                .format("console")
                 .start();
 
 
@@ -225,7 +269,8 @@ public class StructuredStreamingApp {
 //                .start();
 
         try {
-            query.awaitTermination();
+            query1.awaitTermination();
+            query2.awaitTermination();
         } catch (StreamingQueryException e) {
             e.printStackTrace();
         }
