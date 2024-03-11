@@ -1,10 +1,9 @@
 import org.apache.spark.api.java.function.VoidFunction2;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.functions;
+import org.apache.spark.sql.*;
+import org.apache.spark.sql.avro.SchemaConverters;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
+import org.apache.spark.sql.types.StructType;
 import org.apache.spark.storage.StorageLevel;
 
 import java.util.concurrent.TimeoutException;
@@ -20,7 +19,7 @@ public class StructuredStreamingApp {
                 .appName("spark")
                 .getOrCreate();
 
-        Dataset<Row> inputDF = spark
+        Dataset<Row> srcDF = spark
                 .readStream()
                 .format("kafka")
                 .option("kafka.bootstrap.servers", "kafka:9092")
@@ -28,7 +27,7 @@ public class StructuredStreamingApp {
                 .option("failOnDataLoss", "false")
                 .load();
 
-        Dataset<Row> splitted = inputDF
+        Dataset<Row> splitted = srcDF
                 .select(col("value").cast("string"))
                 .select(split(col("value"), ",").alias("csv_values"))
                 .select(
@@ -122,6 +121,8 @@ public class StructuredStreamingApp {
                 .withColumn("event_date", functions.to_date(col("start_time")))
                 .withColumn("probe", functions.substring(col("measuring_probe_name"), 1, 2));
 
+        String[] columnNames = withStartAndProbe.columns();
+
         Dataset<Row> exploded_input = withStartAndProbe
                 .withColumn("ip", functions.explode(functions.split(trim(col("ms_ip_address")), ";")))
                 .withColumn("ip", trim(col("ip")))
@@ -194,9 +195,6 @@ public class StructuredStreamingApp {
                 )
                 .withColumn("msisdn", coalesce(col("_msisdn"), col("msisdn")))
                 .withColumn("imsi", coalesce(col("_imsi"), col("imsi")));
-//                .drop("imsi", "msisdn")
-//                .withColumnRenamed("_imsi", "imsi")
-//                .withColumnRenamed("_msisdn", "msisdn");
 
 
         StreamingQuery query1 = joined_msip
@@ -208,33 +206,31 @@ public class StructuredStreamingApp {
                                 Dataset<Row> filtered = dataset.sort(col("_start_time").desc()).limit(1);
                                 filtered.show();
 
-//                                filtered
-//                                        .write()
-//                                        .format("avro")
-//                                        .partitionBy("event_date", "probe")
-//                                        .option("path", "./results")
-//                                        .option("checkpointLocation", "./path_to_checkpoint_location")
-//                                        .option("compression", "uncompressed")
-//                                        .option("avroSchema", "{\n" +
-//                                                "  \"type\": \"record\",\n" +
-//                                                "  \"name\": \"MyAvroRecord\",\n" +
-//                                                "  \"fields\": [\n" +
-//                                                "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
-//                                                "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
-//                                                "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
-//                                                "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
-//                                                "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
-//                                                "  ]\n" +
-//                                                "}")
-//                                        .start();
-
-
-
+                                filtered
+                                        .selectExpr(columnNames)
+                                        .write()
+                                        .mode("append")
+                                        .format("avro")
+                                        .option("avroSchema", "{\n" +
+                                                "  \"type\": \"record\",\n" +
+                                                "  \"name\": \"MyAvroRecord\",\n" +
+                                                "  \"fields\": [\n" +
+                                                "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
+                                                "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
+                                                "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
+                                                "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
+                                                "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
+                                                "  ]\n" +
+                                                "}")
+                                        .partitionBy("event_date", "probe")
+                                        .option("path", "./results")
+                                        .option("checkpointLocation", "./path_to_checkpoint_location")
+                                        .option("compression", "uncompressed")
+                                        .save();
 
                             }
                         }
                 )
-                .outputMode("append")
                 .start();
 
         StreamingQuery query2 = joined_imsi_msisdn // здесь ведь не требуется выбирать один?
