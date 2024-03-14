@@ -9,7 +9,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="works both ways">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="saving to avro only query1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" afterDir="false" />
     </list>
@@ -98,7 +98,7 @@
       <workItem from="1709547853888" duration="1856000" />
       <workItem from="1709813665900" duration="15933000" />
       <workItem from="1709902042958" duration="7291000" />
-      <workItem from="1710145997904" duration="474000" />
+      <workItem from="1710145997904" duration="11634000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -163,7 +163,14 @@
       <option name="project" value="LOCAL" />
       <updated>1709914229501</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="saving to avro only query1">
+      <created>1710146692226</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1710146692226</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -190,6 +197,7 @@
     <MESSAGE value="avro + local store, but works fine (with partition)" />
     <MESSAGE value="works (hopefully) with right algorithm, but only one way: imsi is null" />
     <MESSAGE value="works both ways" />
-    <option name="LAST_COMMIT_MESSAGE" value="works both ways" />
+    <MESSAGE value="saving to avro only query1" />
+    <option name="LAST_COMMIT_MESSAGE" value="saving to avro only query1" />
   </component>
 </project>

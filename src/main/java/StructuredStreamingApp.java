@@ -36,9 +36,6 @@ public class StructuredStreamingApp {
                         col("csv_values").getItem(2).cast("long").as("imsi"),
                         col("csv_values").getItem(3).cast("long").as("msisdn"),
                         col("csv_values").getItem(4).cast("string").as("ms_ip_address")
-//                        functions.trim(functions.regexp_replace(
-//                                trim(col("csv_values").getItem(4)), "^;+|;+$", ""))
-//                                .as("ms_ip_address")
 //                        col("csv_values").getItem(0).cast("string").as("measuring_probe_name"),
 //                        col("csv_values").getItem(1).cast("long").as("start_time"),
 //                        col("csv_values").getItem(2).cast("long").as("procedure_duration"),
@@ -165,7 +162,7 @@ public class StructuredStreamingApp {
         exploded_ms_ip.show();
 
 
-        Dataset<Row> joined_imsi_msisdn = exploded_input
+        Dataset<Row> joined_imsi_msisdn = withStartAndProbe
                 .filter(col("imsi").isNotNull().and(not(col("imsi").like("999%"))))
                 .join(
                         imsi_msisdn,
@@ -206,26 +203,44 @@ public class StructuredStreamingApp {
                                 Dataset<Row> filtered = dataset.sort(col("_start_time").desc()).limit(1);
                                 filtered.show();
 
+//                                filtered
+//                                        .selectExpr(columnNames)
+//                                        .write()
+//                                        .mode("append")
+//                                        .format("avro")
+//                                        .option("avroSchema", "{\n" +
+//                                                "  \"type\": \"record\",\n" +
+//                                                "  \"name\": \"MyAvroRecord\",\n" +
+//                                                "  \"fields\": [\n" +
+//                                                "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
+//                                                "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
+//                                                "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
+//                                                "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
+//                                                "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
+//                                                "  ]\n" +
+//                                                "}")
+//                                        .partitionBy("event_date", "probe")
+//                                        .option("path", "./results")
+//                                        .option("checkpointLocation", "./path_to_checkpoint_location")
+//                                        .option("compression", "uncompressed")
+//                                        .save();
+
+//                                System.out.println("\n\n\n!!!!!!!!!!!!!!!!\n" +
+//                                        "Number of partitions: " + filtered.javaRDD().getNumPartitions() +
+//                                        "\n!!!!!!!!!!!!!!\n\n\n");
+
                                 filtered
                                         .selectExpr(columnNames)
                                         .write()
+                                        .option("maxRecordsPerFile", 5)
+//                                        .mode("overwrite")
                                         .mode("append")
-                                        .format("avro")
-                                        .option("avroSchema", "{\n" +
-                                                "  \"type\": \"record\",\n" +
-                                                "  \"name\": \"MyAvroRecord\",\n" +
-                                                "  \"fields\": [\n" +
-                                                "    {\"name\": \"measuring_probe_name\", \"type\": [\"null\", \"string\"]},\n" +
-                                                "    {\"name\": \"start_time\", \"type\": [\"null\", \"long\"]},\n" +
-                                                "    {\"name\": \"imsi\", \"type\": [\"null\", \"long\"]},\n" +
-                                                "    {\"name\": \"msisdn\", \"type\": [\"null\", \"long\"]},\n" +
-                                                "    {\"name\": \"ms_ip_address\", \"type\": [\"null\", \"string\"]}\n" +
-                                                "  ]\n" +
-                                                "}")
+                                        .format("parquet")
                                         .partitionBy("event_date", "probe")
-                                        .option("path", "./results")
-                                        .option("checkpointLocation", "./path_to_checkpoint_location")
-                                        .option("compression", "uncompressed")
+//                                        .option("path", "./parquet_results")
+                                        .option("path", "hdfs://namenode:8020/spark/results")
+//                                        .option("checkpointLocation", "./path_to_checkpoint_location")
+                                        .option("checkpointLocation", "hdfs://namenode:8020/spark/checkpoints")
                                         .save();
 
                             }
@@ -233,10 +248,15 @@ public class StructuredStreamingApp {
                 )
                 .start();
 
-        StreamingQuery query2 = joined_imsi_msisdn // здесь ведь не требуется выбирать один?
+        StreamingQuery query2 = joined_imsi_msisdn
+                .selectExpr(columnNames)
                 .writeStream()
                 .outputMode("append")
-                .format("console")
+                .format("parquet")
+                .partitionBy("event_date", "probe")
+                .option("path", "hdfs://namenode:8020/spark/results")
+                .option("checkpointLocation", "hdfs://namenode:8020/spark/checkpoints")
+
                 .start();
 
 
@@ -317,12 +337,6 @@ public class StructuredStreamingApp {
 //                .withColumn("imsi", col("_imsi"))
 //                .withColumn("msisdn", col("_msisdn"))
 //                .select(columns: _*)
-
-
-
-       // можно соединять потоки, а лучше сразу в синк
-
-
 
 
     }
