@@ -9,14 +9,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="saving to avro only query1">
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/CompactionApp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/spark.conf" afterDir="false" />
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/StructuredStreamingApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/CompactionApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/CompactionApp.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,6 +60,11 @@
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="" />
+    </key>
+  </component>
   <component name="RunAnythingCache">
     <option name="myCommands">
       <command value="mvn clean" />
@@ -178,7 +179,14 @@
       <option name="project" value="LOCAL" />
       <updated>1710146692226</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use">
+      <created>1711182018392</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1711182018392</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -209,6 +217,7 @@
     <MESSAGE value="works (hopefully) with right algorithm, but only one way: imsi is null" />
     <MESSAGE value="works both ways" />
     <MESSAGE value="saving to avro only query1" />
-    <option name="LAST_COMMIT_MESSAGE" value="saving to avro only query1" />
+    <MESSAGE value="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use" />
+    <option name="LAST_COMMIT_MESSAGE" value="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use" />
   </component>
 </project>
