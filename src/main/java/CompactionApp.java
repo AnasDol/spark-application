@@ -20,26 +20,38 @@ public class CompactionApp {
                 .appName("CompactionApp")
                 .getOrCreate();
 
+        Configuration hdfsConf = new Configuration();
+        hdfsConf.set("fs.defaultFS", "hdfs://namenode:8020");
+
+        System.out.println("---------STAGE 1----------");
+
         // Для отключения создания флага _SUCCESS
         spark.conf().set("mapreduce.fileoutputcommitter.marksuccessfuljobs", "false");
 
         ArrayList<Path> paths = new ArrayList<>();
-        paths.add(new Path("hdfs://namenode:8020/spark/results"));
+        paths.add(new Path("/spark/results"));
+
+        System.out.println("---------STAGE 2----------");
 
         String fileFormat = "parquet";
         long fileSize = HDFS_BLOCK_SIZE_BYTES;
 
         for (Path path : paths) {
-            compactDirectory(path, fileFormat, fileSize, new Configuration());
+            System.out.println("---------STAGE 3 for path " + path.toString() + "---------");
+            compactDirectory(path, fileFormat, fileSize, hdfsConf);
         }
 
     }
 
     public static void compactDirectory(Path path, String fileFormat, long desiredFileSize, Configuration hdfsConf) throws IOException {
 
+        System.out.println("---------STAGE 4----------");
+
         FileSystem fs = FileSystem.get(hdfsConf);
 
         ArrayList<FileStatus> dirsToBeCompacted = new ArrayList<>();
+
+        System.out.println("---------STAGE 5----------");
 
         FileStatus[] allFilesInPath = fs.listStatus(path);
         for (FileStatus eventDateDir : allFilesInPath) {
@@ -53,10 +65,12 @@ public class CompactionApp {
             }
         }
 
-        dirsToBeCompacted.parallelStream().map(directoryStatus -> {
+        System.out.println("dirsToBeCompacted: " + dirsToBeCompacted.toString());
+
+        dirsToBeCompacted.parallelStream().forEach(directoryStatus -> {
 
             String readPath = directoryStatus.getPath().toString();
-            String compactedPath = "hdfs://namenode:8020/spark/compacted/"
+            String compactedPath = "hdfs://namenode:8020/spark/results/compacted/"
                     + directoryStatus.getPath().getParent().getName()
                     + "/" + directoryStatus.getPath().getName();
 
@@ -69,6 +83,12 @@ public class CompactionApp {
             }
 
             int repartition = (int) Math.ceil(Math.max(length * 1.2, desiredFileSize) / desiredFileSize);
+
+            System.out.println("[" + directoryStatus.getPath().toString() + "]");
+            System.out.println("readPath: " + readPath);
+            System.out.println("compactedPath: " + compactedPath);
+            System.out.println("length: " + length);
+            System.out.println("repartition: " + repartition);
 
             System.setProperty("spark.job.description", "compact " + readPath);
 
@@ -97,7 +117,6 @@ public class CompactionApp {
                 e.printStackTrace();
             }
 
-            return null;
         });
 
     }

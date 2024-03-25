@@ -9,9 +9,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="simple CompactionApp, before debug">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/CompactionApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/CompactionApp.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -186,7 +185,14 @@
       <option name="project" value="LOCAL" />
       <updated>1711182018392</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="simple CompactionApp, before debug">
+      <created>1711353497222</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1711353497222</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -218,6 +224,7 @@
     <MESSAGE value="works both ways" />
     <MESSAGE value="saving to avro only query1" />
     <MESSAGE value="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use" />
-    <option name="LAST_COMMIT_MESSAGE" value="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use" />
+    <MESSAGE value="simple CompactionApp, before debug" />
+    <option name="LAST_COMMIT_MESSAGE" value="simple CompactionApp, before debug" />
   </component>
 </project>
