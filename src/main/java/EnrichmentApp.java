@@ -21,7 +21,7 @@ public class EnrichmentApp {
 //        if (args.length < 1) {
 //            throw new IllegalArgumentException("Path to config should be specified!");
 //        }
-//        Config config = ConfigFactory.parseFile(new File(args[0]));
+//        config = ConfigFactory.parseFile(new File(args[0]));
 
         config = ConfigFactory.load("spark.conf");
         SparkConf sparkConf = new SparkConf();
