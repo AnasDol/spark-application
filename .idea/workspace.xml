@@ -9,10 +9,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="simple CompactionApp, after debug">
-      <change afterPath="$PROJECT_DIR$/src/main/resources/compaction.conf" afterDir="false" />
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="before probe addition">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/CompactionApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/CompactionApp.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -117,7 +115,11 @@
       <workItem from="1712217957685" duration="619000" />
       <workItem from="1712476466067" duration="2595000" />
       <workItem from="1712651812838" duration="5258000" />
-      <workItem from="1712998523257" duration="2094000" />
+      <workItem from="1712998523257" duration="7996000" />
+      <workItem from="1713506745404" duration="730000" />
+      <workItem from="1714359428508" duration="558000" />
+      <workItem from="1714465479264" duration="8487000" />
+      <workItem from="1714803982148" duration="3204000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -210,7 +212,14 @@
       <option name="project" value="LOCAL" />
       <updated>1711360992624</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="before probe addition">
+      <created>1713105095996</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1713105095996</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -244,6 +253,7 @@
     <MESSAGE value="more OOP-like way; StructuredStreamingApp -&gt; EnrichmentApp; CompactionApp is created; config from resources in use" />
     <MESSAGE value="simple CompactionApp, before debug" />
     <MESSAGE value="simple CompactionApp, after debug" />
-    <option name="LAST_COMMIT_MESSAGE" value="simple CompactionApp, after debug" />
+    <MESSAGE value="before probe addition" />
+    <option name="LAST_COMMIT_MESSAGE" value="before probe addition" />
   </component>
 </project>

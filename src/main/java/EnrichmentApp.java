@@ -7,6 +7,9 @@ import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.storage.StorageLevel;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.apache.spark.sql.functions.*;
@@ -24,7 +27,11 @@ public class EnrichmentApp {
 //        config = ConfigFactory.parseFile(new File(args[0]));
 
         config = ConfigFactory.load("spark.conf");
+
+//        spark.conf().set("spark.sql.streaming.metricsEnabled", "true");
         SparkConf sparkConf = new SparkConf();
+        sparkConf.set("spark.sql.streaming.metricsEnabled", "true");
+
         spark = SparkSession
                 .builder()
                 .appName(config.getString("application.name"))
@@ -43,10 +50,24 @@ public class EnrichmentApp {
         String[] columnNames = srcWithPartitionColumns.columns();
 
         Dataset<Row> imsiMsisdn = getImsiMsisdn();
-        Dataset<Row> joinedImsiMsisdn = joinImsiMsisdn(srcWithPartitionColumns, imsiMsisdn);
+
+        ScheduledExecutorService imsiMsisdnScheduler = Executors.newScheduledThreadPool(1);
+        imsiMsisdnScheduler.scheduleAtFixedRate(() -> {
+            imsiMsisdn.unpersist();
+            imsiMsisdn.persist(StorageLevel.MEMORY_AND_DISK());
+        }, 0, 1, TimeUnit.MINUTES); // обновление раз в минуту (временно)
 
         Dataset<Row> msIpExploded = explodeByMsIpAddress(getMsIp(), "_ip");
+
+        ScheduledExecutorService msIpScheduler = Executors.newScheduledThreadPool(1);
+        msIpScheduler.scheduleAtFixedRate(() -> {
+            msIpExploded.unpersist();
+            msIpExploded.persist(StorageLevel.MEMORY_AND_DISK());
+        }, 0, 1, TimeUnit.MINUTES); // обновление раз в минуту (временно)
+
+        Dataset<Row> joinedImsiMsisdn = joinImsiMsisdn(srcWithPartitionColumns, imsiMsisdn);
         Dataset<Row> joinedMsIp = joinMsIP(srcExploded, msIpExploded);
+
 
         StreamingQuery msIpQuery = joinedMsIp
             .writeStream()
@@ -57,30 +78,41 @@ public class EnrichmentApp {
                             Dataset<Row> filtered = dataset.sort(col("_start_time").desc()).limit(1);
                             filtered.show();
 
-                            filtered
-                                    .selectExpr(columnNames)
-                                    .write()
-                                    .mode("append")
-                                    .format(config.getString("sink.hdfs.format"))
-                                    .partitionBy("event_date", "probe")
-                                    .option("path", config.getString("sink.hdfs.path"))
-                                    .option("checkpointLocation", config.getString("sink.hdfs.checkpointLocation"))
-                                    .save();
+//                            filtered
+//                                    .selectExpr(columnNames)
+//                                    .write()
+//                                    .mode("append")
+//                                    .format(config.getString("sink.hdfs.format"))
+//                                    .partitionBy("event_date", "probe")
+//                                    .option("path", config.getString("sink.hdfs.path"))
+//                                    .option("checkpointLocation", config.getString("sink.hdfs.checkpointLocation"))
+//                                    .save();
 
                         }
                     }
                 )
+                .queryName("MsIp Query")
                 .start();
 
+        // sink в консоль
         StreamingQuery imsiMsisdnQuery = joinedImsiMsisdn
                 .selectExpr(columnNames)
                 .writeStream()
                 .outputMode("append")
-                .format("parquet")
+                .format("console") // изменение формата вывода на консоль
                 .partitionBy("event_date", "probe")
-                .option("path", config.getString("sink.hdfs.path"))
-                .option("checkpointLocation", config.getString("sink.hdfs.checkpointLocation"))
+                .queryName("ImsiMsisdn Query")
                 .start();
+
+//        StreamingQuery imsiMsisdnQuery = joinedImsiMsisdn
+//                .selectExpr(columnNames)
+//                .writeStream()
+//                .outputMode("append")
+//                .format("parquet")
+//                .partitionBy("event_date", "probe")
+//                .option("path", config.getString("sink.hdfs.path"))
+//                .option("checkpointLocation", config.getString("sink.hdfs.checkpointLocation"))
+//                .start();
 
         try {
             msIpQuery.awaitTermination();
@@ -88,6 +120,9 @@ public class EnrichmentApp {
         } catch (StreamingQueryException e) {
             e.printStackTrace();
         }
+
+        imsiMsisdnScheduler.shutdown();
+        msIpScheduler.shutdown();
 
     }
 
@@ -111,7 +146,8 @@ public class EnrichmentApp {
                         col("csv_values").getItem(1).cast("string").as("measuring_probe_name"),
                         col("csv_values").getItem(2).cast("long").as("imsi"),
                         col("csv_values").getItem(3).cast("long").as("msisdn"),
-                        col("csv_values").getItem(4).cast("string").as("ms_ip_address")
+                        col("csv_values").getItem(4).cast("string").as("ms_ip_address"),
+                        col("csv_values").getItem(5).cast("long").as("unique_cdr_id")
 //                        col("csv_values").getItem(0).cast("string").as("measuring_probe_name"),
 //                        col("csv_values").getItem(1).cast("long").as("start_time"),
 //                        col("csv_values").getItem(2).cast("long").as("procedure_duration"),
@@ -193,7 +229,7 @@ public class EnrichmentApp {
 
     private static Dataset<Row> addPartitionColumns(Dataset<Row> src) {
         return src
-                .withColumn("event_date", functions.to_date(col("start_time")))
+                .withColumn("event_date", functions.date_format(functions.to_date(col("start_time")), "yyyy-MM-dd"))
                 .withColumn("probe", functions.substring(col("measuring_probe_name"), 1, 2));
     }
 
@@ -227,7 +263,7 @@ public class EnrichmentApp {
                 .option("user", config.getString("ms_ip.user"))
                 .option("password", config.getString("ms_ip.password"))
                 .load()
-//                .withColumnRenamed("probe", "_probe")
+                .withColumnRenamed("probe", "_probe")
                 .withColumnRenamed("imsi", "_imsi")
                 .withColumnRenamed("msisdn", "_msisdn")
                 .withColumnRenamed("start_time", "_start_time");
@@ -249,9 +285,8 @@ public class EnrichmentApp {
                 .filter(col("imsi").isNull().or(col("imsi").like("999%")))
                 .join(
                         msIpExploded,
-//                        exploded_input.col("probe").equalTo(exploded_ms_ip.col("_probe"))
-//                                .and(
-                        srcExploded.col("ip").equalTo(msIpExploded.col("_ip")) // )
+                        srcExploded.col("probe").equalTo(msIpExploded.col("_probe"))
+                                .and(srcExploded.col("ip").equalTo(msIpExploded.col("_ip")))
                                 .and(srcExploded
                                         .col("start_time")
                                         .$greater$eq(msIpExploded.col("_start_time"))
