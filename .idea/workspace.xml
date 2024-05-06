@@ -9,9 +9,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="before probe addition">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="cache + refresh">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/spark.conf" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/spark.conf" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -119,7 +120,7 @@
       <workItem from="1713506745404" duration="730000" />
       <workItem from="1714359428508" duration="558000" />
       <workItem from="1714465479264" duration="8487000" />
-      <workItem from="1714803982148" duration="3204000" />
+      <workItem from="1714803982148" duration="11637000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -219,7 +220,14 @@
       <option name="project" value="LOCAL" />
       <updated>1713105095996</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="cache + refresh">
+      <created>1714823579461</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1714823579461</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -254,6 +262,7 @@
     <MESSAGE value="simple CompactionApp, before debug" />
     <MESSAGE value="simple CompactionApp, after debug" />
     <MESSAGE value="before probe addition" />
-    <option name="LAST_COMMIT_MESSAGE" value="before probe addition" />
+    <MESSAGE value="cache + refresh" />
+    <option name="LAST_COMMIT_MESSAGE" value="cache + refresh" />
   </component>
 </project>

@@ -3,10 +3,13 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.expressions.Window;
+import org.apache.spark.sql.expressions.WindowSpec;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.storage.StorageLevel;
 
+import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -21,14 +24,13 @@ public class EnrichmentApp {
 
     public static void main(String[] args) throws TimeoutException {
 
-//        if (args.length < 1) {
-//            throw new IllegalArgumentException("Path to config should be specified!");
-//        }
-//        config = ConfigFactory.parseFile(new File(args[0]));
 
-        config = ConfigFactory.load("spark.conf");
+        if (args.length < 1) {
+            config = ConfigFactory.load("spark.conf");
+        } else {
+            config = ConfigFactory.parseFile(new File(args[0]));
+        }
 
-//        spark.conf().set("spark.sql.streaming.metricsEnabled", "true");
         SparkConf sparkConf = new SparkConf();
         sparkConf.set("spark.sql.streaming.metricsEnabled", "true");
 
@@ -38,6 +40,8 @@ public class EnrichmentApp {
                 .config(sparkConf)
                 .getOrCreate();
 
+        spark.sparkContext().setLogLevel("WARN");
+
         run();
 
     }
@@ -45,28 +49,42 @@ public class EnrichmentApp {
     public static void run() throws TimeoutException {
 
         Dataset<Row> srcWithPartitionColumns = addPartitionColumns(splitCSV(getKafkaSource()));
+        String[] columnNames = srcWithPartitionColumns.columns(); // схема результирующей строки совпадает с srcWithPartitionColumns
         Dataset<Row> srcExploded = explodeByMsIpAddress(srcWithPartitionColumns, "ip");
 
-        String[] columnNames = srcWithPartitionColumns.columns();
 
         Dataset<Row> imsiMsisdn = getImsiMsisdn();
 
         ScheduledExecutorService imsiMsisdnScheduler = Executors.newScheduledThreadPool(1);
-        imsiMsisdnScheduler.scheduleAtFixedRate(() -> {
-            imsiMsisdn.unpersist();
-            imsiMsisdn.persist(StorageLevel.MEMORY_AND_DISK());
-        }, 0, 1, TimeUnit.MINUTES); // обновление раз в минуту (временно)
+        imsiMsisdnScheduler.scheduleAtFixedRate(
+                () -> {
+                    imsiMsisdn.unpersist();
+                    imsiMsisdn.persist(StorageLevel.MEMORY_AND_DISK());  // lazy!
+                    // imsiMsisdn.count(); // to make it eager
+                },
+                config.getLong("imsi_msisdn.cache.initial_delay_min"),
+                config.getLong("imsi_msisdn.cache.period_min"),
+                TimeUnit.MINUTES
+        );
+
 
         Dataset<Row> msIpExploded = explodeByMsIpAddress(getMsIp(), "_ip");
 
         ScheduledExecutorService msIpScheduler = Executors.newScheduledThreadPool(1);
-        msIpScheduler.scheduleAtFixedRate(() -> {
-            msIpExploded.unpersist();
-            msIpExploded.persist(StorageLevel.MEMORY_AND_DISK());
-        }, 0, 1, TimeUnit.MINUTES); // обновление раз в минуту (временно)
+        msIpScheduler.scheduleAtFixedRate(
+                () -> {
+                    msIpExploded.unpersist();
+                    msIpExploded.persist(StorageLevel.MEMORY_AND_DISK()); // lazy!
+                    // msIpExploded.count(); // to make it eager
+                },
+                config.getLong("ms_ip.cache.initial_delay_min"),
+                config.getLong("ms_ip.cache.period_min"),
+                TimeUnit.MINUTES
+        );
+
 
         Dataset<Row> joinedImsiMsisdn = joinImsiMsisdn(srcWithPartitionColumns, imsiMsisdn);
-        Dataset<Row> joinedMsIp = joinMsIP(srcExploded, msIpExploded);
+        Dataset<Row> joinedMsIp = joinMsIp(srcExploded, msIpExploded);
 
 
         StreamingQuery msIpQuery = joinedMsIp
@@ -75,8 +93,17 @@ public class EnrichmentApp {
                     (VoidFunction2<Dataset<Row>, Long>) (dataset, batchId) -> {
                         if (!dataset.isEmpty()) {
 
-                            Dataset<Row> filtered = dataset.sort(col("_start_time").desc()).limit(1);
-                            filtered.show();
+                            WindowSpec windowSpec = Window.partitionBy("unique_cdr_id").orderBy(col("_start_time").desc());
+
+                            // Получаем строки с наибольшим значением _start_time для каждого unique_cdr_id
+                            Dataset<Row> maxRows = dataset.withColumn("rank", row_number().over(windowSpec))
+                                    .filter(col("rank").equalTo(1))
+                                    .drop("rank");
+
+                            maxRows.selectExpr(columnNames).show();
+
+//                            Dataset<Row> filtered = dataset.sort(col("_start_time").desc()).limit(1);
+//                            filtered.selectExpr(columnNames).show();
 
 //                            filtered
 //                                    .selectExpr(columnNames)
@@ -280,7 +307,7 @@ public class EnrichmentApp {
                 .withColumn("msisdn", coalesce(col("_msisdn"), col("msisdn")));
     }
 
-    private static Dataset<Row> joinMsIP(Dataset<Row> srcExploded, Dataset<Row> msIpExploded) {
+    private static Dataset<Row> joinMsIp(Dataset<Row> srcExploded, Dataset<Row> msIpExploded) {
         return srcExploded
                 .filter(col("imsi").isNull().or(col("imsi").like("999%")))
                 .join(
