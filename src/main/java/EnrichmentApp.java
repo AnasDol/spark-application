@@ -7,6 +7,7 @@ import org.apache.spark.sql.expressions.Window;
 import org.apache.spark.sql.expressions.WindowSpec;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
+import org.apache.spark.sql.streaming.StreamingQueryListener;
 import org.apache.spark.storage.StorageLevel;
 
 import java.io.File;
@@ -16,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.apache.spark.sql.functions.*;
+
+import static spark.Spark.*;
 
 public class EnrichmentApp {
 
@@ -42,6 +45,8 @@ public class EnrichmentApp {
 
         spark.sparkContext().setLogLevel("WARN");
 
+
+
         run();
 
     }
@@ -49,6 +54,10 @@ public class EnrichmentApp {
     public static void run() throws TimeoutException {
 
         Dataset<Row> srcWithPartitionColumns = addPartitionColumns(splitCSV(getKafkaSource()));
+
+//        Dataset<Row> observed_ds = srcWithPartitionColumns.observe("my_event", functions.count(functions.lit(1)).alias("rc"));
+
+
         String[] columnNames = srcWithPartitionColumns.columns(); // схема результирующей строки совпадает с srcWithPartitionColumns
         Dataset<Row> srcExploded = explodeByMsIpAddress(srcWithPartitionColumns, "ip");
 
@@ -86,6 +95,67 @@ public class EnrichmentApp {
         Dataset<Row> joinedImsiMsisdn = joinImsiMsisdn(srcWithPartitionColumns, imsiMsisdn);
         Dataset<Row> joinedMsIp = joinMsIp(srcExploded, msIpExploded);
 
+//        port(8080);
+//        get("/hello2", (req, res) -> "Hello World2");
+
+
+
+        spark.streams().addListener(new StreamingQueryListener() {
+            @Override
+            public void onQueryStarted(QueryStartedEvent event) {
+//                System.out.println("------onQueryStarted");
+//                System.out.println(event.toString());
+
+            }
+
+            @Override
+            public void onQueryProgress(QueryProgressEvent event) {
+
+                System.out.println("\n------onQueryProgress--------");
+
+                String progressJson = event.progress().json();
+
+//                get("/test", (request, response) -> progressJson);
+//
+//                get("/" + event.progress().name().replaceAll(" ", "_"), (request, response) -> event.progress());
+
+//                System.out.println(event.progress().observedMetrics());
+//                System.out.println(event.progress().inputRowsPerSecond());
+//                System.out.println(event.progress().numInputRows());
+//                System.out.println(event.progress().json());
+//                System.out.println(event.progress().sources());
+
+
+
+
+//
+//
+//                System.out.println(event.toString());
+//                if (event.progress().observedMetrics().containsKey("my_event")) {
+//                    Row row = event.progress().observedMetrics().get("my_event");
+//
+//                    long num_rows = row.getAs("rc");
+//
+//                    System.out.println("\tnum_rows = " + num_rows);
+//
+////                    get("/metrics/num_rows", (request, response) -> {
+////                        return String.valueOf(num_rows);
+////                    });
+//
+//                }
+//                if (event.progress().observedMetrics().containsKey("name")) {
+//                    System.out.println(event.progress().observedMetrics().get("name"));
+//
+//                }
+            }
+
+            @Override
+            public void onQueryTerminated(QueryTerminatedEvent event) {
+//                System.out.println("------onQueryTerminated");
+//                System.out.println(event.toString());
+            }
+        });
+
 
         StreamingQuery msIpQuery = joinedMsIp
             .writeStream()
@@ -119,6 +189,7 @@ public class EnrichmentApp {
                     }
                 )
                 .queryName("MsIp Query")
+                .option("checkpointLocation", config.getString("checkpointLocation"))
                 .start();
 
         // sink в консоль
@@ -129,6 +200,7 @@ public class EnrichmentApp {
                 .format("console") // изменение формата вывода на консоль
                 .partitionBy("event_date", "probe")
                 .queryName("ImsiMsisdn Query")
+                .option("checkpointLocation", config.getString("checkpointLocation"))
                 .start();
 
 //        StreamingQuery imsiMsisdnQuery = joinedImsiMsisdn
@@ -161,6 +233,12 @@ public class EnrichmentApp {
                 .option("kafka.bootstrap.servers", config.getString("source.kafka.bootstrap.servers"))
                 .option("subscribe", config.getString("source.subscribe"))
                 .option("failOnDataLoss", config.getString("source.failOnDataLoss"))
+                .option("properties.security.protocol", "SASL_PLAINTEXT")
+                .option("properties.sasl.kerberos.service.name", "kafka")
+                .option("kafka.security.protocol", "SASL_PLAINTEXT")
+                .option("kafka.sasl.kerberos.service.name", "kafka")
+                .option("security.protocol", "SASL_PLAINTEXT")
+                .option("sasl.kerberos.service.name", "kafka")
                 .load();
     }
 
@@ -275,7 +353,8 @@ public class EnrichmentApp {
                 .option("url", config.getString("imsi_msisdn.url"))
                 .option("dbtable", config.getString("imsi_msisdn.dbtable"))
                 .option("user", config.getString("imsi_msisdn.user"))
-                .option("password", config.getString("imsi_msisdn.password"))
+                .option("driver", "org.postgresql.Driver")
+//                .option("password", config.getString("imsi_msisdn.password"))
                 .load()
                 .withColumnRenamed("imsi", "_imsi")
                 .withColumnRenamed("msisdn", "_msisdn");
@@ -288,7 +367,7 @@ public class EnrichmentApp {
                 .option("url", config.getString("ms_ip.url"))
                 .option("dbtable", config.getString("ms_ip.dbtable"))
                 .option("user", config.getString("ms_ip.user"))
-                .option("password", config.getString("ms_ip.password"))
+//                .option("password", config.getString("ms_ip.password"))
                 .load()
                 .withColumnRenamed("probe", "_probe")
                 .withColumnRenamed("imsi", "_imsi")

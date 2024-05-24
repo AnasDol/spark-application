@@ -9,8 +9,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="cache + refresh">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="unique_cdr_id for windowSpec">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/spark.conf" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/spark.conf" afterDir="false" />
     </list>
@@ -120,7 +121,12 @@
       <workItem from="1713506745404" duration="730000" />
       <workItem from="1714359428508" duration="558000" />
       <workItem from="1714465479264" duration="8487000" />
-      <workItem from="1714803982148" duration="11637000" />
+      <workItem from="1714803982148" duration="24142000" />
+      <workItem from="1715862311879" duration="4656000" />
+      <workItem from="1715933638442" duration="4350000" />
+      <workItem from="1716013842901" duration="57000" />
+      <workItem from="1716112690997" duration="7307000" />
+      <workItem from="1716296233074" duration="10000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -227,7 +233,14 @@
       <option name="project" value="LOCAL" />
       <updated>1714823579461</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="unique_cdr_id for windowSpec">
+      <created>1714978135378</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1714978135378</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -263,6 +276,7 @@
     <MESSAGE value="simple CompactionApp, after debug" />
     <MESSAGE value="before probe addition" />
     <MESSAGE value="cache + refresh" />
-    <option name="LAST_COMMIT_MESSAGE" value="cache + refresh" />
+    <MESSAGE value="unique_cdr_id for windowSpec" />
+    <option name="LAST_COMMIT_MESSAGE" value="unique_cdr_id for windowSpec" />
   </component>
 </project>
