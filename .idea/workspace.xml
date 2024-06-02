@@ -8,12 +8,13 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="BookmarksViewState">
+    <option name="rewriteBookmarkType" value="true" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="unique_cdr_id for windowSpec">
+    <list default="true" id="0f7723c0-c8f8-41c1-be23-b428d3ca0e66" name="Changes" comment="kerberos">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/EnrichmentApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/spark.conf" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/spark.conf" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -127,6 +128,9 @@
       <workItem from="1716013842901" duration="57000" />
       <workItem from="1716112690997" duration="7307000" />
       <workItem from="1716296233074" duration="10000" />
+      <workItem from="1716554817512" duration="30272000" />
+      <workItem from="1716966415577" duration="1925000" />
+      <workItem from="1717335462957" duration="1306000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1705046077707</created>
@@ -240,7 +244,14 @@
       <option name="project" value="LOCAL" />
       <updated>1714978135378</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="kerberos">
+      <created>1716554941823</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1716554941823</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -277,6 +288,7 @@
     <MESSAGE value="before probe addition" />
     <MESSAGE value="cache + refresh" />
     <MESSAGE value="unique_cdr_id for windowSpec" />
-    <option name="LAST_COMMIT_MESSAGE" value="unique_cdr_id for windowSpec" />
+    <MESSAGE value="kerberos" />
+    <option name="LAST_COMMIT_MESSAGE" value="kerberos" />
   </component>
 </project>
